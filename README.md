@@ -1,6 +1,6 @@
 # Org Fair
 
-Expected live URL: https://FrostyMaverixk.github.io/Assignment-8/ (deployment pending verification).
+Live URL: https://frostymaverixk.github.io/Assignment-8/
 
 Flutter app for the CICT Org Fair. Event listings are configured to load from
 Contentful's Content Delivery API.
