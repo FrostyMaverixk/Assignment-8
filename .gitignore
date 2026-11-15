@@ -1,0 +1,22 @@
+# Local CMS configuration and signing credentials
+cms.json
+key.properties
+*.jks
+*.keystore
+.env
+.env.*
+!.env.example
+
+# Flutter and Dart generated files
+.dart_tool/
+build/
+coverage/
+.pub/
+.pub-cache/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Local editor settings
+.idea/
+*.iml

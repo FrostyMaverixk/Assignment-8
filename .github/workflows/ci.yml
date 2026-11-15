@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.7'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build web release
+        env:
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          CMS: ${{ vars.CMS }}
+          CMS_SPACE: ${{ vars.CMS_SPACE }}
+          CMS_TOKEN: ${{ secrets.CMS_TOKEN }}
+        run: |
+          if [ -n "$CMS" ]; then
+            flutter build web --release \
+              --base-href "/$REPOSITORY_NAME/" \
+              --dart-define="CMS=$CMS" \
+              --dart-define="CMS_SPACE=$CMS_SPACE" \
+              --dart-define="CMS_TOKEN=$CMS_TOKEN"
+          else
+            flutter build web --release --base-href "/$REPOSITORY_NAME/"
+          fi

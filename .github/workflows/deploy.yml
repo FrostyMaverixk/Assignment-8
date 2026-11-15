@@ -1,0 +1,83 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check Contentful configuration
+        env:
+          CMS: ${{ vars.CMS }}
+          CMS_SPACE: ${{ vars.CMS_SPACE }}
+          CMS_TOKEN: ${{ secrets.CMS_TOKEN }}
+        run: |
+          if [ "$CMS" != "contentful" ]; then
+            echo "::error::Set the repository variable CMS to contentful."
+            exit 1
+          fi
+          if [ -z "$CMS_SPACE" ]; then
+            echo "::error::Add your Contentful space ID as the repository variable CMS_SPACE."
+            exit 1
+          fi
+          if [ -z "$CMS_TOKEN" ]; then
+            echo "::error::Add your Content Delivery API token as the repository secret CMS_TOKEN."
+            exit 1
+          fi
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.7'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build web app for GitHub Pages
+        env:
+          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          CMS: ${{ vars.CMS }}
+          CMS_SPACE: ${{ vars.CMS_SPACE }}
+          CMS_TOKEN: ${{ secrets.CMS_TOKEN }}
+        run: |
+          flutter build web --release \
+            --base-href "/$REPOSITORY_NAME/" \
+            --dart-define="CMS=$CMS" \
+            --dart-define="CMS_SPACE=$CMS_SPACE" \
+            --dart-define="CMS_TOKEN=$CMS_TOKEN"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
